@@ -3,7 +3,6 @@ import os
 import time
 
 import angr
-from claripy import pickle
 
 from bbf.utils import NETWORK_KEYWORDS
 from loggers import bar_logger
