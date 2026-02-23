@@ -1,4 +1,5 @@
 import angr
+from angr import sim_options
 import archinfo
 
 _ordered_argument_regs_names = {
@@ -172,7 +173,7 @@ def get_initial_state(p, ct, addr):
 
     s = p.factory.blank_state(
         remove_options={
-            angr.options.LAZY_SOLVES
+            sim_options.LAZY_SOLVES
         }
     )
 
