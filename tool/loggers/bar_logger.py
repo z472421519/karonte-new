@@ -1,4 +1,10 @@
-import progressbar2 as progressbar
+try:
+    import progressbar2 as progressbar
+    HAS_PROGRESSBAR = True
+except ImportError:
+    HAS_PROGRESSBAR = False
+    progressbar = None
+
 from enum import Enum
 import time
 import sys
@@ -61,16 +67,17 @@ class BarLogger:
         :return: None
         """
 
-        widgets = [
-            progressbar.Percentage(),
-            ' (', progressbar.SimpleProgress(), ') ',
+        if HAS_PROGRESSBAR:
+            widgets = [
+                progressbar.Percentage(),
+                ' (', progressbar.SimpleProgress(), ') ',
 
-            progressbar.Bar(),
-            progressbar.Timer(),
-            ' ETC: ', self._ETC, ' '
-        ]
-        self._bar = progressbar.ProgressBar(redirect_stderr=True, max_value=tot_elaborations, widgets=widgets)
-        self._bar.start()
+                progressbar.Bar(),
+                progressbar.Timer(),
+                ' ETC: ', self._ETC, ' '
+            ]
+            self._bar = progressbar.ProgressBar(redirect_stderr=True, max_value=tot_elaborations, widgets=widgets)
+            self._bar.start()
         self.reset_completed_elaborations()
         self._tot_elaborations = tot_elaborations
 
@@ -219,6 +226,7 @@ class BarLogger:
             self._update_bar()
             if self._bar:
                 self._bar.finish()
-            progressbar.streams.flush()
+            if HAS_PROGRESSBAR:
+                progressbar.streams.flush()
         except:
             pass
