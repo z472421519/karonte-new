@@ -18,7 +18,6 @@ from loggers import bar_logger
 from bbf.binary_finder import *
 from bbf.forward_backward_taint_tracker import ForwardBackWardTaintTracker
 from bbf.utils import *
-from config import *
 from taint_analysis.utils import arg_reg_off, arg_reg_names, get_arity
 from bdg.utils import get_mem_string
 from bdg.cpfs import LIB_KEYWORD
