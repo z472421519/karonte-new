@@ -242,7 +242,7 @@ class CPF:
 
         c = caller_node
         # Reaching definition analysis
-        fun = cfg.functions.function(caller_node.function_address)
+        fun = cfg.functions[caller_node.function_address]
         t = (caller_node.instruction_addrs[-1], OP_AFTER)
 
         try:

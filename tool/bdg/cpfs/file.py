@@ -167,7 +167,7 @@ class File(CPF):
             path_copy = next_path.copy(deep=True).step()
             addr = path_copy.active[0].addr
 
-        node = cfg.get_any_node(addr)
+        node = cfg.model.get_any_node(addr)
 
         if not are_parameters_in_registers(p):
             raise Exception("file.run: Implement me")
