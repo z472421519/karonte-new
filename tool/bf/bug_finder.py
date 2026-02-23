@@ -170,11 +170,24 @@ class BugFinder:
         :return: None
         """
 
+        log.info(f"=== Discovering HTTP strings (keywords: {len(strs)}) ===")
+        log.info(f"Keywords: {strs[:5]}{'...' if len(strs) > 5 else ''}")
+
         for n in self._bdg.nodes:
             old_role_info_callers = [role[RoleInfo.CALLER_BB] for roles in n.role_info.values() for role in roles]
             n.clear_role_info()
             log.info(f"Discovering HTTP strings for {str(n)}")
             BugFinder.find_ref_http_strings(n, strs, old_role_info_callers)
+
+            # Log discovered sources
+            total_sources = sum(len(refs) for refs in n.role_info.values())
+            log.info(f"  Found {len(n.role_info)} unique addresses with {total_sources} total role_info entries")
+            if n.role_info:
+                for addr, refs_info in list(n.role_info.items())[:3]:  # Show first 3
+                    for info in refs_info:
+                        log.info(f"    @ {hex(addr)}: data_key='{info[RoleInfo.DATAKEY]}' role={info[RoleInfo.ROLE]}")
+                if len(n.role_info) > 3:
+                    log.info(f"    ... and {len(n.role_info) - 3} more addresses")
             log.info("Done.")
 
     def _vuln_analysis(self, bdg_node, seed_addr, info):
@@ -345,6 +358,16 @@ class BugFinder:
         worklist = roots
         analyzed_dk = {}
 
+        log.info("=== Starting vulnerability analysis ===")
+        log.info(f"Root nodes: {len(roots)}")
+        log.info(f"Total nodes: {len(self._bdg.nodes)}")
+        log.info(f"Orphan nodes: {len([n for n in self._bdg.nodes if n.orphan])}")
+
+        # Log node info
+        for n in self._bdg.nodes:
+            role_count = sum(len(refs) for refs in n.role_info.values())
+            log.info(f"  Node {os.path.basename(n.bin)}: {len(n.role_info)} addrs, {role_count} roles, root={n.root}, orphan={n.orphan}")
+
         # setup the loading bar
         self._setup_progress_bar()
         self._analysis_starting_time = time.time()
@@ -363,7 +386,9 @@ class BugFinder:
 
             # analyze parents
             if self._analyze_parents:
-                log.info(f"Analyzing {os.path.basename(parent.bin)}")
+                log.info(f"Analyzing parent: {os.path.basename(parent.bin)}")
+                log.info(f"  Total sources to analyze: {sum(len(refs) for refs in parent.role_info.values())}")
+                analyzed_count = 0
                 for s_addr, s_refs_info in parent.role_info.items():
                     for info in s_refs_info:
                         if info in analyzed_dk[parent]:
@@ -371,19 +396,29 @@ class BugFinder:
 
                         analyzed_dk[parent].append(info)
                         self._register_next_elaboration()
-                        log.info(f"New string: {info[RoleInfo.DATAKEY]}")
+                        analyzed_count += 1
+                        log.info(f"  [{analyzed_count}] Analyzing source @ {hex(s_addr)}")
+                        log.info(f"      Data key: '{info[RoleInfo.DATAKEY]}'")
+                        log.info(f"      Role: {info[RoleInfo.ROLE]}, CPF: {info[RoleInfo.CPF]}")
+                        log.info(f"      X-ref function: {hex(info[RoleInfo.X_REF_FUN])}")
                         self._vuln_analysis(parent, s_addr, info)
+                log.info(f"  Completed analysis of {analyzed_count} sources for {os.path.basename(parent.bin)}")
                 self._report_stats_fun(parent, self._stats)
 
             if self._analyze_children:
                 # analyze children
                 for child in self._bdg.graph[parent]:
-                    log.info(f"Analyzing {os.path.basename(child.bin)}")
+                    log.info(f"Analyzing child: {os.path.basename(child.bin)}")
 
                     if child not in worklist:
                         worklist.append(child)
                     if child not in analyzed_dk:
                         analyzed_dk[child] = []
+
+                    log.info(f"  Child has {sum(len(refs) for refs in child.role_info.values())} sources")
+                    log.info(f"  Parent strings: {parent_strings[:3]}{'...' if len(parent_strings) > 3 else ''}")
+                    analyzed_count = 0
+
                     for s_addr, s_refs_info in child.role_info.items():
                         for info in s_refs_info:
                             if info in analyzed_dk[child]:
@@ -394,17 +429,25 @@ class BugFinder:
                                 # update the loading bar
                                 self._register_next_elaboration()
                                 analyzed_dk[child].append(info)
-                                log.info(f"New string: {info[RoleInfo.DATAKEY]}")
+                                analyzed_count += 1
+                                log.info(f"  [{analyzed_count}] Analyzing source @ {hex(s_addr)}")
+                                log.info(f"      Data key: '{info[RoleInfo.DATAKEY]}' (matched parent)")
                                 self._vuln_analysis(child, s_addr, info)
+                    log.info(f"  Completed analysis of {analyzed_count} sources for child {os.path.basename(child.bin)}")
                     self._report_stats_fun(child, self._stats)
 
         if self._analyze_children:
             # orphans
-            log.info("Analyzing orphan nodes")
+            log.info("=== Analyzing orphan nodes ===")
+            log.info(f"Total orphans: {len(self._bdg.orphans)}")
             for n in self._bdg.orphans:
-                log.info(f"Analyzing {os.path.basename(n.bin)}")
+                log.info(f"Analyzing orphan: {os.path.basename(n.bin)}")
                 if n not in analyzed_dk:
                     analyzed_dk[n] = []
+
+                total_sources = sum(len(refs) for refs in n.role_info.values())
+                log.info(f"  Orphan has {total_sources} sources to analyze")
+                analyzed_count = 0
 
                 for s_addr, s_refs_info in n.role_info.items():
                     for info in s_refs_info:
@@ -412,8 +455,13 @@ class BugFinder:
                             continue
                         if 'only_string' in self._config and self._config['only_string'].lower() == 'true':
                             if info[RoleInfo.DATAKEY] != self._config['data_keys'][0][1]:
+                                log.info(f"  Skipping '{info[RoleInfo.DATAKEY]}' (only_string mode, looking for '{self._config['data_keys'][0][1]}')")
                                 continue
                         analyzed_dk[n].append(info)
+                        analyzed_count += 1
+                        log.info(f"  [{analyzed_count}] Analyzing orphan source @ {hex(s_addr)}")
+                        log.info(f"      Data key: '{info[RoleInfo.DATAKEY]}'")
+                        log.info(f"      Role: {info[RoleInfo.ROLE]}")
 
                         # update the loading bar
                         self._register_next_elaboration()
