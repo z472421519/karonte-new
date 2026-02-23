@@ -1,4 +1,4 @@
-import progressbar
+import progressbar2 as progressbar
 from enum import Enum
 import time
 import sys
