@@ -385,6 +385,7 @@ class BinaryDependencyGraph:
                         self._projects[b] = angr.Project(b, auto_load_libs=False)
 
                     log.info(f"Building {bin_name} CFG (this may take some time)")
+                    # This might not work here
                     self._cfgs[b] = self._projects[b].analyses.CFG(collect_data_references=True,
                                                                    extra_cross_references=True)
                     memcplike = find_memcmp_like(self._projects[b], self._cfgs[b]) if blob else []
