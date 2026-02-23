@@ -500,6 +500,12 @@ class BinaryDependencyGraph:
         # enter into the call
         sim = p.factory.simgr(s)
         sim.step()
+
+        # Check if step succeeded
+        if not sim.active:
+            log.warning(f"_get_role: No active states after step at {hex(f_addr)}")
+            return Role.UNKNOWN
+
         s = sim.active[0]
         if reg_name:
             setattr(s.regs, reg_name, BVV(key_addr, p.arch.bits))
