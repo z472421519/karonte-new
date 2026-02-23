@@ -105,7 +105,7 @@ def test_single_binary(binary_path, timeout=60, use_fast=False, verbose=False):
 
         # Collect CFG info
         cfg_info = {
-            'nodes': len(cfg.nodes()),
+            'nodes': len(cfg.model.nodes()),
             'functions': len(cfg.functions),
             'arch': p.arch.name,
             'entry': hex(p.entry),
