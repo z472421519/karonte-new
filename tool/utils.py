@@ -1,7 +1,13 @@
 import os
 from random import randint
 
-from libraries.extractor.extractor import Extractor
+# Lazy import to avoid requiring binwalk if firmware extraction is not used
+try:
+    from libraries.extractor.extractor import Extractor
+    HAS_EXTRACTOR = True
+except ImportError:
+    HAS_EXTRACTOR = False
+    Extractor = None
 
 
 MAX_THREADS = 3
@@ -18,6 +24,13 @@ def unpack_firmware(fw_path, out_dir):
     :param out_dir: the directory to extract to
     :return: the path of the unpacked firmware, which is stored in the brand folder
     """
+    if not HAS_EXTRACTOR:
+        raise ImportError(
+            "Firmware extraction requires binwalk. Install it with: pip install binwalk\n"
+            "Note: binwalk 2.1.0 from PyPI may not work. You may need to install from source:\n"
+            "https://github.com/ReFirmLabs/binwalk"
+        )
+
     input_file = fw_path
 
     # arguments for the extraction

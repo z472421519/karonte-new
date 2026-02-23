@@ -10,4 +10,6 @@ python-magic>=0.4.16,<0.5.0
 angr>=9.2.100,<9.3.0
 mpmath>=1.2.0
 sympy>=1.10.0
-binwalk>=2.3.0
+# binwalk>=2.3.0  # Optional: only needed for firmware extraction
+                   # PyPI only has 2.1.0, install from source if needed:
+                   # https://github.com/ReFirmLabs/binwalk
