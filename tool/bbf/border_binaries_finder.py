@@ -30,7 +30,6 @@ log = logging.getLogger("BorderBinariesFinder")
 log.setLevel("DEBUG")
 
 angr.loggers.disable_root_logger()
-angr.logging.disable(logging.ERROR)
 
 
 def get_string(p, mem_addr, extended=True):

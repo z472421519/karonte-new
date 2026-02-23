@@ -11,7 +11,6 @@ from loggers.bar_logger import BarLogger
 from utils import *
 
 angr.loggers.disable_root_logger()
-angr.logging.disable(logging.ERROR)
 log = None
 
 

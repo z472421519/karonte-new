@@ -17,7 +17,6 @@ from taint_analysis.utils import get_arity, arg_reg_name, arg_reg_names, get_arg
     get_initial_state
 
 angr.loggers.disable_root_logger()
-angr.logging.disable(logging.ERROR)
 
 logging.basicConfig()
 log = logging.getLogger("BinaryDependencyGraph")
